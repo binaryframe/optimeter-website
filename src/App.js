@@ -1,23 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Droplet, LogOut, Calendar, TrendingUp, TrendingDown, Sun, Moon } from 'lucide-react';
+import { Droplet, LogOut, Calendar, TrendingUp, TrendingDown, Sun, Moon, Zap, Flame, Image as ImageIcon, X } from 'lucide-react';
 
 // Test data generator
-const generateTestData = () => {
+const generateTestData = (utilityType) => {
     const months = ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер', 'Жов', 'Лис', 'Гру'];
     const currentMonth = new Date().getMonth();
     const data = [];
-    let cumulative = 1250;
+
+    let cumulative, usageRange, costPerUnit;
+
+    switch(utilityType) {
+        case 'water':
+            cumulative = 1250;
+            usageRange = [8, 23];
+            costPerUnit = 2.5;
+            break;
+        case 'electricity':
+            cumulative = 5420;
+            usageRange = [150, 350];
+            costPerUnit = 1.68;
+            break;
+        case 'gas':
+            cumulative = 890;
+            usageRange = [20, 80];
+            costPerUnit = 7.96;
+            break;
+        default:
+            cumulative = 0;
+            usageRange = [0, 0];
+            costPerUnit = 0;
+    }
 
     for (let i = 0; i <= currentMonth; i++) {
-        const usage = Math.floor(Math.random() * 15) + 8; // 8-23 m³ per month
+        const usage = Math.floor(Math.random() * (usageRange[1] - usageRange[0])) + usageRange[0];
         cumulative += usage;
+
+        // Generate a mock photo URL (placeholder)
+        const photoUrl = `https://placehold.co/600x400/2563eb/FFF?text=${utilityType.toUpperCase()}+Reading:+${cumulative}`;
+
         data.push({
             month: months[i],
             reading: cumulative,
             usage: usage,
-            cost: (usage * 2.5).toFixed(2),
-            date: new Date(2025, i, Math.floor(Math.random() * 28) + 1).toISOString()
+            cost: (usage * costPerUnit).toFixed(2),
+            date: new Date(2025, i, Math.floor(Math.random() * 28) + 1).toISOString(),
+            photoUrl: photoUrl
         });
     }
     return data;
@@ -27,7 +55,13 @@ const WaterMeterDashboard = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [meterData, setMeterData] = useState([]);
+    const [waterData, setWaterData] = useState([]);
+    const [electricityData, setElectricityData] = useState([]);
+    const [gasData, setGasData] = useState([]);
+    // Demo: gas not connected
+    const [connectedDevices, setConnectedDevices] = useState({ water: true, electricity: true, gas: false });
+    const [activeUtility, setActiveUtility] = useState('water');
+    const [selectedPhoto, setSelectedPhoto] = useState(null);
     const [error, setError] = useState('');
     const [darkMode, setDarkMode] = useState(false);
 
@@ -50,13 +84,17 @@ const WaterMeterDashboard = () => {
     const loadMeterData = () => {
         // This function will later fetch from backend API
         // For now, using test data
-        const testData = generateTestData();
-        setMeterData(testData);
+        const waterTestData = generateTestData('water');
+        const electricityTestData = generateTestData('electricity');
+        const gasTestData = generateTestData('gas');
+
+        setWaterData(waterTestData);
+        setElectricityData(electricityTestData);
+        setGasData(gasTestData);
     };
 
     const handleLogin = (e) => {
         e.preventDefault();
-        // Simple authentication - replace with actual backend API call
         if (username && password) {
             if (username === 'demo' && password === 'demo') {
                 sessionStorage.setItem('waterMeterUser', username);
@@ -72,12 +110,18 @@ const WaterMeterDashboard = () => {
         }
     };
 
+    const handleGoogleLogin = () => {
+        setError('Google авторизація буде доступна після інтеграції з backend');
+    };
+
     const handleLogout = () => {
         sessionStorage.removeItem('waterMeterUser');
         setIsLoggedIn(false);
         setUsername('');
         setPassword('');
-        setMeterData([]);
+        setWaterData([]);
+        setElectricityData([]);
+        setGasData([]);
     };
 
     const toggleDarkMode = () => {
@@ -86,7 +130,50 @@ const WaterMeterDashboard = () => {
         sessionStorage.setItem('darkMode', newMode.toString());
     };
 
+    const getUtilityConfig = (utility) => {
+        const configs = {
+            water: {
+                name: 'Вода',
+                icon: Droplet,
+                unit: 'м³',
+                color: darkMode ? 'text-blue-400' : 'text-blue-500',
+                bgColor: darkMode ? 'bg-blue-600' : 'bg-blue-500',
+                chartColor: darkMode ? '#60a5fa' : '#3b82f6',
+                barColor: darkMode ? '#22d3ee' : '#06b6d4'
+            },
+            electricity: {
+                name: 'Електроенергія',
+                icon: Zap,
+                unit: 'кВт·год',
+                color: darkMode ? 'text-yellow-400' : 'text-yellow-500',
+                bgColor: darkMode ? 'bg-yellow-600' : 'bg-yellow-500',
+                chartColor: darkMode ? '#fbbf24' : '#f59e0b',
+                barColor: darkMode ? '#fde047' : '#eab308'
+            },
+            gas: {
+                name: 'Газ',
+                icon: Flame,
+                unit: 'м³',
+                color: darkMode ? 'text-orange-400' : 'text-orange-500',
+                bgColor: darkMode ? 'bg-orange-600' : 'bg-orange-500',
+                chartColor: darkMode ? '#fb923c' : '#f97316',
+                barColor: darkMode ? '#fdba74' : '#fb923c'
+            }
+        };
+        return configs[utility];
+    };
+
+    const getCurrentData = () => {
+        switch(activeUtility) {
+            case 'water': return waterData;
+            case 'electricity': return electricityData;
+            case 'gas': return gasData;
+            default: return [];
+        }
+    };
+
     const calculateStats = () => {
+        const meterData = getCurrentData();
         if (meterData.length === 0) return { total: 0, avg: 0, current: 0, change: 0 };
 
         const totalUsage = meterData.reduce((sum, item) => sum + item.usage, 0);
@@ -104,29 +191,28 @@ const WaterMeterDashboard = () => {
             <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${
                 darkMode ? 'bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900' : 'bg-gradient-to-br from-blue-50 to-cyan-100'
             }`}>
-                <div className={`rounded-2xl shadow-2xl p-8 w-full max-w-md transition-colors duration-300 ${
+                <div className={`rounded-2xl shadow-2xl p-8 w-full max-w-md transition-colors duration-300 relative ${
                     darkMode ? 'bg-gray-800' : 'bg-white'
                 }`}>
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center justify-center flex-1">
-                            <div className={`p-4 rounded-full ${darkMode ? 'bg-blue-600' : 'bg-blue-500'}`}>
-                                <Droplet className="w-12 h-12 text-white" />
-                            </div>
+                    <button
+                        onClick={toggleDarkMode}
+                        className={`absolute top-4 right-4 p-2 rounded-lg transition-all duration-300 ${
+                            darkMode ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                        }`}
+                    >
+                        {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    </button>
+
+                    <div className="flex items-center justify-center mb-6">
+                        <div className={`p-4 rounded-full ${darkMode ? 'bg-blue-600' : 'bg-blue-500'}`}>
+                            <Droplet className="w-12 h-12 text-white" />
                         </div>
-                        <button
-                            onClick={toggleDarkMode}
-                            className={`p-2 rounded-lg transition-all duration-300 ${
-                                darkMode ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                            }`}
-                        >
-                            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </button>
                     </div>
                     <h1 className={`text-3xl font-bold text-center mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                         Optimeter
                     </h1>
                     <p className={`text-center mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Відстежуйте споживання води
+                        Відстежуйте споживання комунальних ресурсів
                     </p>
 
                     <div>
@@ -176,11 +262,39 @@ const WaterMeterDashboard = () => {
 
                         <button
                             onClick={handleLogin}
-                            className={`w-full font-semibold py-3 rounded-lg transition duration-200 ${
+                            className={`w-full font-semibold py-3 rounded-lg transition duration-200 mb-3 ${
                                 darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
                             }`}
                         >
                             Увійти
+                        </button>
+
+                        <div className="relative my-6">
+                            <div className={`absolute inset-0 flex items-center ${darkMode ? '' : ''}`}>
+                                <div className={`w-full border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}></div>
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className={`px-2 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
+                                    або
+                                </span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={handleGoogleLogin}
+                            className={`w-full font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center space-x-2 border ${
+                                darkMode
+                                    ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
+                                    : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
+                            }`}
+                        >
+                            <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            <span>Увійти через Google</span>
                         </button>
 
                         <p className={`text-center text-sm mt-4 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
