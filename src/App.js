@@ -307,6 +307,9 @@ const WaterMeterDashboard = () => {
     }
 
     const stats = calculateStats();
+    const config = getUtilityConfig(activeUtility);
+    const Icon = config.icon;
+    const meterData = getCurrentData();
 
     return (
         <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -316,8 +319,8 @@ const WaterMeterDashboard = () => {
             }`}>
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${darkMode ? 'bg-blue-600' : 'bg-blue-500'}`}>
-                            <Droplet className="w-6 h-6 text-white" />
+                        <div className={`p-2 rounded-lg ${config.bgColor}`}>
+                            <Icon className="w-6 h-6 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                             Доброго дня, {username}
@@ -345,189 +348,311 @@ const WaterMeterDashboard = () => {
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
-                        darkMode ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Поточні показання
-                            </span>
-                            <Calendar className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-500'}`} />
-                        </div>
-                        <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            {stats.current}
-                        </div>
-                        <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>м³</div>
-                    </div>
+            {/* Utility Tabs */}
+            <div className={`border-b transition-colors duration-300 ${
+                darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex space-x-1">
+                        {['water', 'electricity', 'gas'].map((utility) => {
+                            const utilConfig = getUtilityConfig(utility);
+                            const UtilIcon = utilConfig.icon;
+                            const isConnected = connectedDevices[utility];
+                            const isActive = activeUtility === utility;
 
-                    <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
-                        darkMode ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Цього місяця
-                            </span>
-                            <Droplet className={`w-5 h-5 ${darkMode ? 'text-cyan-400' : 'text-cyan-500'}`} />
-                        </div>
-                        <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            {meterData.length > 0 ? meterData[meterData.length - 1].usage : 0}
-                        </div>
-                        <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>м³ використано</div>
-                    </div>
-
-                    <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
-                        darkMode ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Середнє споживання
-                            </span>
-                            <TrendingUp className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
-                        </div>
-                        <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            {stats.avg}
-                        </div>
-                        <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>м³/місяць</div>
-                    </div>
-
-                    <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
-                        darkMode ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Зміна за місяць
-                            </span>
-                            {parseFloat(stats.change) >= 0 ? (
-                                <TrendingUp className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-500'}`} />
-                            ) : (
-                                <TrendingDown className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
-                            )}
-                        </div>
-                        <div className={`text-3xl font-bold ${parseFloat(stats.change) >= 0 ? (darkMode ? 'text-red-400' : 'text-red-600') : (darkMode ? 'text-green-400' : 'text-green-600')}`}>
-                            {stats.change > 0 ? '+' : ''}{stats.change}%
-                        </div>
-                        <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>від минулого</div>
-                    </div>
-                </div>
-
-                {/* Charts */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
-                        darkMode ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                        <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            Графік показань
-                        </h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={meterData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
-                                <XAxis dataKey="month" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-                                <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                                        border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
-                                        borderRadius: '8px',
-                                        color: darkMode ? '#ffffff' : '#000000'
-                                    }}
-                                />
-                                <Legend wrapperStyle={{ color: darkMode ? '#ffffff' : '#000000' }} />
-                                <Line type="monotone" dataKey="reading" stroke={darkMode ? '#60a5fa' : '#3b82f6'} strokeWidth={2} name="Загальні показання (м³)" />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
-                        darkMode ? 'bg-gray-800' : 'bg-white'
-                    }`}>
-                        <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            Споживання по місяцях
-                        </h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={meterData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
-                                <XAxis dataKey="month" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-                                <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: darkMode ? '#1f2937' : '#ffffff',
-                                        border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
-                                        borderRadius: '8px',
-                                        color: darkMode ? '#ffffff' : '#000000'
-                                    }}
-                                />
-                                <Legend wrapperStyle={{ color: darkMode ? '#ffffff' : '#000000' }} />
-                                <Bar dataKey="usage" fill={darkMode ? '#22d3ee' : '#06b6d4'} name="Споживання (м³)" />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Data Table */}
-                <div className={`rounded-xl shadow-md overflow-hidden transition-colors duration-300 ${
-                    darkMode ? 'bg-gray-800' : 'bg-white'
-                }`}>
-                    <div className={`px-6 py-4 border-b transition-colors duration-300 ${
-                        darkMode ? 'border-gray-700' : 'border-gray-200'
-                    }`}>
-                        <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            Статистика по місяцях
-                        </h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
-                            <tr>
-                                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                                    darkMode ? 'text-gray-300' : 'text-gray-500'
-                                }`}>Місяць</th>
-                                <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
-                                    darkMode ? 'text-gray-300' : 'text-gray-500'
-                                }`}>Дата Зчитування</th>
-                                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
-                                    darkMode ? 'text-gray-300' : 'text-gray-500'
-                                }`}>Показання (м³)</th>
-                                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
-                                    darkMode ? 'text-gray-300' : 'text-gray-500'
-                                }`}>Споживання (м³)</th>
-                                <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
-                                    darkMode ? 'text-gray-300' : 'text-gray-500'
-                                }`}>Орієнт. Вартість (₴)</th>
-                            </tr>
-                            </thead>
-                            <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                            {meterData.map((record, index) => (
-                                <tr key={index} className={`transition-colors duration-150 ${
-                                    darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                                }`}>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                                        darkMode ? 'text-white' : 'text-gray-900'
-                                    }`}>{record.month} 2025</td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                        darkMode ? 'text-gray-400' : 'text-gray-500'
-                                    }`}>
-                                        {new Date(record.date).toLocaleDateString('uk-UA')}
-                                    </td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                                        darkMode ? 'text-white' : 'text-gray-900'
-                                    }`}>{record.reading}</td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                                        darkMode ? 'text-white' : 'text-gray-900'
-                                    }`}>{record.usage}</td>
-                                    <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
-                                        darkMode ? 'text-white' : 'text-gray-900'
-                                    }`}>{record.cost} ₴</td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
+                            return (
+                                <button
+                                    key={utility}
+                                    onClick={() => setActiveUtility(utility)}
+                                    disabled={!isConnected}
+                                    className={`flex items-center space-x-2 px-6 py-4 border-b-2 transition-all duration-200 ${
+                                        isActive
+                                            ? `${utilConfig.color} border-current font-semibold`
+                                            : isConnected
+                                                ? `${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'} border-transparent`
+                                                : `${darkMode ? 'text-gray-600' : 'text-gray-400'} border-transparent cursor-not-allowed opacity-50`
+                                    }`}
+                                >
+                                    <UtilIcon className="w-5 h-5" />
+                                    <span>{utilConfig.name}</span>
+                                    {!isConnected && (
+                                        <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                            Немає
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 py-8">
+                {!connectedDevices[activeUtility] ? (
+                    <div className={`rounded-xl shadow-md p-12 text-center transition-colors duration-300 ${
+                        darkMode ? 'bg-gray-800' : 'bg-white'
+                    }`}>
+                        <div className={`inline-flex p-4 rounded-full mb-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                            <Icon className={`w-12 h-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        </div>
+                        <h3 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                            Optimeter для {config.name.toLowerCase()} не підключений
+                        </h3>
+                        <p className={`mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            Підключіть пристрій Optimeter для відстеження споживання {config.name.toLowerCase()}
+                        </p>
+                        <button className={`px-6 py-3 rounded-lg font-semibold transition duration-200 ${
+                            config.bgColor
+                        } text-white hover:opacity-90`}>
+                            Підключити Optimeter
+                        </button>
+                    </div>
+                ) : (
+                    <>
+                        {/* Stats Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                            <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Поточні показання
+                            </span>
+                                    <Calendar className={`w-5 h-5 ${config.color}`} />
+                                </div>
+                                <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    {stats.current}
+                                </div>
+                                <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{config.unit}</div>
+                            </div>
+
+                            <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Цього місяця
+                            </span>
+                                    <Icon className={`w-5 h-5 ${config.color}`} />
+                                </div>
+                                <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    {meterData.length > 0 ? meterData[meterData.length - 1].usage : 0}
+                                </div>
+                                <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{config.unit} використано</div>
+                            </div>
+
+                            <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Середнє споживання
+                            </span>
+                                    <TrendingUp className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
+                                </div>
+                                <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    {stats.avg}
+                                </div>
+                                <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{config.unit}/місяць</div>
+                            </div>
+
+                            <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <div className="flex items-center justify-between mb-2">
+                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Зміна за місяць
+                            </span>
+                                    {parseFloat(stats.change) >= 0 ? (
+                                        <TrendingUp className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-500'}`} />
+                                    ) : (
+                                        <TrendingDown className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
+                                    )}
+                                </div>
+                                <div className={`text-3xl font-bold ${parseFloat(stats.change) >= 0 ? (darkMode ? 'text-red-400' : 'text-red-600') : (darkMode ? 'text-green-400' : 'text-green-600')}`}>
+                                    {stats.change > 0 ? '+' : ''}{stats.change}%
+                                </div>
+                                <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>від минулого</div>
+                            </div>
+                        </div>
+
+                        {/* Charts */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                            <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    Графік показань
+                                </h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={meterData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+                                        <XAxis dataKey="month" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                                        <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                                                border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                                                borderRadius: '8px',
+                                                color: darkMode ? '#ffffff' : '#000000'
+                                            }}
+                                        />
+                                        <Legend wrapperStyle={{ color: darkMode ? '#ffffff' : '#000000' }} />
+                                        <Line type="monotone" dataKey="reading" stroke={config.chartColor} strokeWidth={2} name={`Загальні показання (${config.unit})`} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                            }`}>
+                                <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    Споживання по місяцях
+                                </h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={meterData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? '#374151' : '#e5e7eb'} />
+                                        <XAxis dataKey="month" stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                                        <YAxis stroke={darkMode ? '#9ca3af' : '#6b7280'} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: darkMode ? '#1f2937' : '#ffffff',
+                                                border: `1px solid ${darkMode ? '#374151' : '#e5e7eb'}`,
+                                                borderRadius: '8px',
+                                                color: darkMode ? '#ffffff' : '#000000'
+                                            }}
+                                        />
+                                        <Legend wrapperStyle={{ color: darkMode ? '#ffffff' : '#000000' }} />
+                                        <Bar dataKey="usage" fill={config.barColor} name={`Споживання (${config.unit})`} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                        {/* Data Table with Photo Proof */}
+                        <div className={`rounded-xl shadow-md overflow-hidden transition-colors duration-300 ${
+                            darkMode ? 'bg-gray-800' : 'bg-white'
+                        }`}>
+                            <div className={`px-6 py-4 border-b transition-colors duration-300 ${
+                                darkMode ? 'border-gray-700' : 'border-gray-200'
+                            }`}>
+                                <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    Статистика по місяцях
+                                </h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead className={darkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+                                    <tr>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                            darkMode ? 'text-gray-300' : 'text-gray-500'
+                                        }`}>Місяць</th>
+                                        <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                                            darkMode ? 'text-gray-300' : 'text-gray-500'
+                                        }`}>Дата Зчитування</th>
+                                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
+                                            darkMode ? 'text-gray-300' : 'text-gray-500'
+                                        }`}>Показання ({config.unit})</th>
+                                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
+                                            darkMode ? 'text-gray-300' : 'text-gray-500'
+                                        }`}>Споживання ({config.unit})</th>
+                                        <th className={`px-6 py-3 text-right text-xs font-medium uppercase tracking-wider ${
+                                            darkMode ? 'text-gray-300' : 'text-gray-500'
+                                        }`}>Орієнт. Вартість (₴)</th>
+                                        <th className={`px-6 py-3 text-center text-xs font-medium uppercase tracking-wider ${
+                                            darkMode ? 'text-gray-300' : 'text-gray-500'
+                                        }`}>Фото</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody className={`divide-y ${darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                                    {meterData.map((record, index) => (
+                                        <tr key={index} className={`transition-colors duration-150 ${
+                                            darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                                        }`}>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                                                darkMode ? 'text-white' : 'text-gray-900'
+                                            }`}>{record.month} 2025</td>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                                                darkMode ? 'text-gray-400' : 'text-gray-500'
+                                            }`}>
+                                                {new Date(record.date).toLocaleDateString('uk-UA')}
+                                            </td>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                                                darkMode ? 'text-white' : 'text-gray-900'
+                                            }`}>{record.reading}</td>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                                                darkMode ? 'text-white' : 'text-gray-900'
+                                            }`}>{record.usage}</td>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+                                                darkMode ? 'text-white' : 'text-gray-900'
+                                            }`}>{record.cost} ₴</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                                <button
+                                                    onClick={() => setSelectedPhoto(record)}
+                                                    className={`p-1.5 rounded-full transition-colors ${
+                                                        darkMode
+                                                            ? 'text-blue-400 hover:bg-gray-600'
+                                                            : 'text-blue-600 hover:bg-blue-50'
+                                                    }`}
+                                                    title="Переглянути фото лічильника"
+                                                >
+                                                    <ImageIcon className="w-5 h-5" />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </div>
+
+            {/* Photo Modal */}
+            {selectedPhoto && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75" onClick={() => setSelectedPhoto(null)}>
+                    <div className={`relative max-w-2xl w-full rounded-xl overflow-hidden shadow-2xl ${
+                        darkMode ? 'bg-gray-800' : 'bg-white'
+                    }`} onClick={e => e.stopPropagation()}>
+                        <div className={`flex items-center justify-between p-4 border-b ${
+                            darkMode ? 'border-gray-700' : 'border-gray-200'
+                        }`}>
+                            <h3 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                Фото лічильника - {selectedPhoto.month} 2025
+                            </h3>
+                            <button
+                                onClick={() => setSelectedPhoto(null)}
+                                className={`p-1 rounded-full ${darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'}`}
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <div className="relative aspect-video w-full bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
+                                <img
+                                    src={selectedPhoto.photoUrl}
+                                    alt="Meter Reading Proof"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <div className={`mt-4 grid grid-cols-2 gap-4 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                                <div>
+                                    <span className="block font-medium mb-1">Розпізнані цифри:</span>
+                                    <span className={`text-xl font-mono font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                        {selectedPhoto.reading}
+                                    </span>
+                                </div>
+                                <div className="text-right">
+                                    <span className="block font-medium mb-1">Дата фіксації:</span>
+                                    <span>{new Date(selectedPhoto.date).toLocaleString('uk-UA')}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
