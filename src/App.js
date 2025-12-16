@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Droplet, LogOut, Calendar, TrendingUp, TrendingDown, Sun, Moon, Zap, Flame, Image as ImageIcon, X } from 'lucide-react';
+import {
+    LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+import {
+    Droplet, LogOut, Calendar, TrendingUp, TrendingDown, Sun, Moon,
+    Zap, Flame, Image as ImageIcon, X, Plus, QrCode, Smartphone
+} from 'lucide-react';
 
-// Test data generator
+// --- Test Data Generator (Unchanged) ---
 const generateTestData = (utilityType) => {
     const months = ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер', 'Жов', 'Лис', 'Гру'];
     const currentMonth = new Date().getMonth();
@@ -35,8 +40,6 @@ const generateTestData = (utilityType) => {
     for (let i = 0; i <= currentMonth; i++) {
         const usage = Math.floor(Math.random() * (usageRange[1] - usageRange[0])) + usageRange[0];
         cumulative += usage;
-
-        // Generate a mock photo URL (placeholder)
         const photoUrl = `https://placehold.co/600x400/2563eb/FFF?text=${utilityType.toUpperCase()}+Reading:+${cumulative}`;
 
         data.push({
@@ -52,28 +55,41 @@ const generateTestData = (utilityType) => {
 };
 
 const WaterMeterDashboard = () => {
+    // Auth State
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+    const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+    const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+
+    // Data State
     const [waterData, setWaterData] = useState([]);
     const [electricityData, setElectricityData] = useState([]);
     const [gasData, setGasData] = useState([]);
-    // Demo: gas not connected
-    const [connectedDevices, setConnectedDevices] = useState({ water: true, electricity: true, gas: false });
+
+    // Device State
+    const [connectedDevices, setConnectedDevices] = useState({ water: false, electricity: false, gas: false });
+    const [showDeviceModal, setShowDeviceModal] = useState(false);
+    const [serialCode, setSerialCode] = useState('');
+    const [deviceMessage, setDeviceMessage] = useState('');
+
+    // UI State
     const [activeUtility, setActiveUtility] = useState('water');
     const [selectedPhoto, setSelectedPhoto] = useState(null);
     const [error, setError] = useState('');
     const [darkMode, setDarkMode] = useState(false);
 
     useEffect(() => {
-        // Check if user is already logged in
         const savedUser = sessionStorage.getItem('waterMeterUser');
         const savedTheme = sessionStorage.getItem('darkMode');
+        const savedDevices = sessionStorage.getItem('connectedDevices');
 
         if (savedUser) {
-            setUsername(savedUser);
+            setFormData(prev => ({ ...prev, name: savedUser }));
             setIsLoggedIn(true);
             loadMeterData();
+        }
+
+        if (savedDevices) {
+            setConnectedDevices(JSON.parse(savedDevices));
         }
 
         if (savedTheme === 'true') {
@@ -82,46 +98,100 @@ const WaterMeterDashboard = () => {
     }, []);
 
     const loadMeterData = () => {
-        // This function will later fetch from backend API
-        // For now, using test data
-        const waterTestData = generateTestData('water');
-        const electricityTestData = generateTestData('electricity');
-        const gasTestData = generateTestData('gas');
-
-        setWaterData(waterTestData);
-        setElectricityData(electricityTestData);
-        setGasData(gasTestData);
+        setWaterData(generateTestData('water'));
+        setElectricityData(generateTestData('electricity'));
+        setGasData(generateTestData('gas'));
     };
 
-    const handleLogin = (e) => {
+    // --- Authentication Handlers ---
+
+    const handleInputChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleAuthSubmit = (e) => {
         e.preventDefault();
-        if (username && password) {
-            if (username === 'demo' && password === 'demo') {
-                sessionStorage.setItem('waterMeterUser', username);
-                setIsLoggedIn(true);
-                setUsername(username);
-                setError('');
-                loadMeterData();
+        setError('');
+
+        if (!formData.email || !formData.password || (authMode === 'register' && !formData.name)) {
+            setError('Будь ласка, заповніть всі поля');
+            return;
+        }
+
+        // Mock Login Logic
+        if (authMode === 'login') {
+            if ((formData.email === 'demo' && formData.password === 'demo') || formData.email.includes('@')) {
+                // Determine name based on input or default
+                const userName = formData.name || formData.email.split('@')[0] || 'Користувач';
+                finishAuth(userName);
             } else {
-                setError('Невірні дані. Спробуйте demo/demo');
+                setError('Невірний логін або пароль');
             }
-        } else {
-            setError('Будь ласка, введіть логін та пароль');
+        }
+        // Mock Register Logic
+        else {
+            if (formData.email.includes('@') && formData.password.length >= 4) {
+                finishAuth(formData.name);
+            } else {
+                setError('Введіть коректний email та пароль (мінімум 4 символи)');
+            }
         }
     };
 
-    const handleGoogleLogin = () => {
-        setError('Google авторизація буде доступна після інтеграції з backend');
+    const finishAuth = (userName) => {
+        sessionStorage.setItem('waterMeterUser', userName);
+        setFormData(prev => ({ ...prev, name: userName }));
+        setIsLoggedIn(true);
+        loadMeterData();
+        // If it's the demo user, give them some devices by default
+        if (formData.email === 'demo') {
+            const demoDevices = { water: true, electricity: true, gas: false };
+            setConnectedDevices(demoDevices);
+            sessionStorage.setItem('connectedDevices', JSON.stringify(demoDevices));
+        }
     };
 
     const handleLogout = () => {
         sessionStorage.removeItem('waterMeterUser');
         setIsLoggedIn(false);
-        setUsername('');
-        setPassword('');
-        setWaterData([]);
-        setElectricityData([]);
-        setGasData([]);
+        setFormData({ name: '', email: '', password: '' });
+        setConnectedDevices({ water: false, electricity: false, gas: false });
+    };
+
+    // --- Device Connection Handlers ---
+
+    const handleConnectDevice = (e) => {
+        e.preventDefault();
+        setDeviceMessage('');
+
+        if (!serialCode) {
+            setDeviceMessage({ type: 'error', text: 'Введіть серійний код' });
+            return;
+        }
+
+        // Mock Validation of ESP32 Serial Codes
+        // WAT-xxx -> Water, EL-xxx -> Electricity, GAS-xxx -> Gas
+        const code = serialCode.toUpperCase();
+        let newDevice = null;
+
+        if (code.startsWith('WAT')) newDevice = 'water';
+        else if (code.startsWith('EL')) newDevice = 'electricity';
+        else if (code.startsWith('GAS')) newDevice = 'gas';
+
+        if (newDevice) {
+            const updatedDevices = { ...connectedDevices, [newDevice]: true };
+            setConnectedDevices(updatedDevices);
+            sessionStorage.setItem('connectedDevices', JSON.stringify(updatedDevices));
+            setActiveUtility(newDevice);
+            setDeviceMessage({ type: 'success', text: `Пристрій успішно підключено!` });
+            setTimeout(() => {
+                setShowDeviceModal(false);
+                setSerialCode('');
+                setDeviceMessage('');
+            }, 1500);
+        } else {
+            setDeviceMessage({ type: 'error', text: 'Невірний формат коду (Спробуйте WAT-001, EL-001, або GAS-001)' });
+        }
     };
 
     const toggleDarkMode = () => {
@@ -186,6 +256,7 @@ const WaterMeterDashboard = () => {
         return { total: totalUsage, avg: avgUsage, current: currentReading, change };
     };
 
+    // --- RENDER: LOGIN / REGISTER SCREEN ---
     if (!isLoggedIn) {
         return (
             <div className={`min-h-screen flex items-center justify-center p-4 transition-colors duration-300 ${
@@ -211,26 +282,46 @@ const WaterMeterDashboard = () => {
                     <h1 className={`text-3xl font-bold text-center mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                         Optimeter
                     </h1>
-                    <p className={`text-center mb-8 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                        Відстежуйте споживання комунальних ресурсів
+                    <p className={`text-center mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {authMode === 'login' ? 'З поверненням!' : 'Створіть свій аккаунт'}
                     </p>
 
-                    <div>
+                    <form onSubmit={handleAuthSubmit}>
+                        {authMode === 'register' && (
+                            <div className="mb-4">
+                                <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    Ім'я
+                                </label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 transition-colors duration-300 ${
+                                        darkMode
+                                            ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 placeholder-gray-400'
+                                            : 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500'
+                                    }`}
+                                    placeholder="Ваше ім'я"
+                                />
+                            </div>
+                        )}
+
                         <div className="mb-4">
                             <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Логін
+                                Email
                             </label>
                             <input
                                 type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleLogin(e)}
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
                                 className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 transition-colors duration-300 ${
                                     darkMode
                                         ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 placeholder-gray-400'
                                         : 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500'
                                 }`}
-                                placeholder="Введіть логін"
+                                placeholder="name@email.com"
                             />
                         </div>
 
@@ -240,15 +331,15 @@ const WaterMeterDashboard = () => {
                             </label>
                             <input
                                 type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleLogin(e)}
+                                name="password"
+                                value={formData.password}
+                                onChange={handleInputChange}
                                 className={`w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 transition-colors duration-300 ${
                                     darkMode
                                         ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 placeholder-gray-400'
                                         : 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500'
                                 }`}
-                                placeholder="Введіть пароль"
+                                placeholder="••••••••"
                             />
                         </div>
 
@@ -261,51 +352,45 @@ const WaterMeterDashboard = () => {
                         )}
 
                         <button
-                            onClick={handleLogin}
+                            type="submit"
                             className={`w-full font-semibold py-3 rounded-lg transition duration-200 mb-3 ${
                                 darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
                             }`}
                         >
-                            Увійти
+                            {authMode === 'login' ? 'Увійти' : 'Зареєструватися'}
                         </button>
+                    </form>
 
-                        <div className="relative my-6">
-                            <div className={`absolute inset-0 flex items-center ${darkMode ? '' : ''}`}>
-                                <div className={`w-full border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}></div>
-                            </div>
-                            <div className="relative flex justify-center text-sm">
+                    <div className="relative my-6">
+                        <div className={`absolute inset-0 flex items-center`}>
+                            <div className={`w-full border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
                                 <span className={`px-2 ${darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'}`}>
                                     або
                                 </span>
-                            </div>
                         </div>
-
-                        <button
-                            onClick={handleGoogleLogin}
-                            className={`w-full font-semibold py-3 rounded-lg transition duration-200 flex items-center justify-center space-x-2 border ${
-                                darkMode
-                                    ? 'bg-gray-700 hover:bg-gray-600 text-white border-gray-600'
-                                    : 'bg-white hover:bg-gray-50 text-gray-700 border-gray-300'
-                            }`}
-                        >
-                            <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                            </svg>
-                            <span>Увійти через Google</span>
-                        </button>
-
-                        <p className={`text-center text-sm mt-4 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                            Демо дані: demo / demo
-                        </p>
                     </div>
+
+                    <button
+                        onClick={() => {
+                            setAuthMode(authMode === 'login' ? 'register' : 'login');
+                            setError('');
+                        }}
+                        className={`w-full text-sm font-semibold text-center hover:underline ${
+                            darkMode ? 'text-blue-400' : 'text-blue-600'
+                        }`}
+                    >
+                        {authMode === 'login'
+                            ? "Немає аккаунту? Зареєструватися"
+                            : "Вже є аккаунт? Увійти"}
+                    </button>
                 </div>
             </div>
         );
     }
 
+    // --- RENDER: DASHBOARD ---
     const stats = calculateStats();
     const config = getUtilityConfig(activeUtility);
     const Icon = config.icon;
@@ -323,10 +408,19 @@ const WaterMeterDashboard = () => {
                             <Icon className="w-6 h-6 text-white" />
                         </div>
                         <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            Доброго дня, {username}
+                            Привіт, {formData.name}
                         </h1>
                     </div>
                     <div className="flex items-center space-x-2">
+                        <button
+                            onClick={() => setShowDeviceModal(true)}
+                            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition duration-200 ${
+                                darkMode ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            }`}
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span className="hidden sm:inline">Додати пристрій</span>
+                        </button>
                         <button
                             onClick={toggleDarkMode}
                             className={`p-2 rounded-lg transition-all duration-300 ${
@@ -353,7 +447,7 @@ const WaterMeterDashboard = () => {
                 darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
             }`}>
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-1 overflow-x-auto">
                         {['water', 'electricity', 'gas'].map((utility) => {
                             const utilConfig = getUtilityConfig(utility);
                             const UtilIcon = utilConfig.icon;
@@ -364,20 +458,17 @@ const WaterMeterDashboard = () => {
                                 <button
                                     key={utility}
                                     onClick={() => setActiveUtility(utility)}
-                                    disabled={!isConnected}
-                                    className={`flex items-center space-x-2 px-6 py-4 border-b-2 transition-all duration-200 ${
+                                    className={`flex items-center space-x-2 px-6 py-4 border-b-2 transition-all duration-200 whitespace-nowrap ${
                                         isActive
                                             ? `${utilConfig.color} border-current font-semibold`
-                                            : isConnected
-                                                ? `${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'} border-transparent`
-                                                : `${darkMode ? 'text-gray-600' : 'text-gray-400'} border-transparent cursor-not-allowed opacity-50`
+                                            : `${darkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-800'} border-transparent`
                                     }`}
                                 >
                                     <UtilIcon className="w-5 h-5" />
                                     <span>{utilConfig.name}</span>
                                     {!isConnected && (
-                                        <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                                            Немає
+                                        <span className="text-xs bg-gray-500 text-white px-2 py-0.5 rounded-full opacity-60 ml-2">
+                                            -
                                         </span>
                                     )}
                                 </button>
@@ -397,28 +488,30 @@ const WaterMeterDashboard = () => {
                             <Icon className={`w-12 h-12 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                         </div>
                         <h3 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
-                            Optimeter для {config.name.toLowerCase()} не підключений
+                            Optimeter не підключений
                         </h3>
-                        <p className={`mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Підключіть пристрій Optimeter для відстеження споживання {config.name.toLowerCase()}
+                        <p className={`mb-6 max-w-md mx-auto ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            Для початку відстеження споживання, введіть серійний код вашого пристрою.
                         </p>
-                        <button className={`px-6 py-3 rounded-lg font-semibold transition duration-200 ${
-                            config.bgColor
-                        } text-white hover:opacity-90`}>
-                            Підключити Optimeter
+                        <button
+                            onClick={() => setShowDeviceModal(true)}
+                            className={`px-6 py-3 rounded-lg font-semibold transition duration-200 ${config.bgColor} text-white hover:opacity-90 shadow-lg`}
+                        >
+                            Підключити {config.name}
                         </button>
                     </div>
                 ) : (
                     <>
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                            {/* Card 1 */}
                             <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
                                 darkMode ? 'bg-gray-800' : 'bg-white'
                             }`}>
                                 <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Поточні показання
-                            </span>
+                                    <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        Поточні показання
+                                    </span>
                                     <Calendar className={`w-5 h-5 ${config.color}`} />
                                 </div>
                                 <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -427,13 +520,14 @@ const WaterMeterDashboard = () => {
                                 <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{config.unit}</div>
                             </div>
 
+                            {/* Card 2 */}
                             <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
                                 darkMode ? 'bg-gray-800' : 'bg-white'
                             }`}>
                                 <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Цього місяця
-                            </span>
+                                    <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        Цього місяця
+                                    </span>
                                     <Icon className={`w-5 h-5 ${config.color}`} />
                                 </div>
                                 <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -442,13 +536,14 @@ const WaterMeterDashboard = () => {
                                 <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{config.unit} використано</div>
                             </div>
 
+                            {/* Card 3 */}
                             <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
                                 darkMode ? 'bg-gray-800' : 'bg-white'
                             }`}>
                                 <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Середнє споживання
-                            </span>
+                                    <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        Середнє споживання
+                                    </span>
                                     <TrendingUp className={`w-5 h-5 ${darkMode ? 'text-green-400' : 'text-green-500'}`} />
                                 </div>
                                 <div className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
@@ -457,13 +552,14 @@ const WaterMeterDashboard = () => {
                                 <div className={`text-sm mt-1 ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>{config.unit}/місяць</div>
                             </div>
 
+                            {/* Card 4 */}
                             <div className={`rounded-xl shadow-md p-6 transition-colors duration-300 ${
                                 darkMode ? 'bg-gray-800' : 'bg-white'
                             }`}>
                                 <div className="flex items-center justify-between mb-2">
-                            <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                Зміна за місяць
-                            </span>
+                                    <span className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                        Зміна за місяць
+                                    </span>
                                     {parseFloat(stats.change) >= 0 ? (
                                         <TrendingUp className={`w-5 h-5 ${darkMode ? 'text-red-400' : 'text-red-500'}`} />
                                     ) : (
@@ -530,7 +626,7 @@ const WaterMeterDashboard = () => {
                             </div>
                         </div>
 
-                        {/* Data Table with Photo Proof */}
+                        {/* Data Table */}
                         <div className={`rounded-xl shadow-md overflow-hidden transition-colors duration-300 ${
                             darkMode ? 'bg-gray-800' : 'bg-white'
                         }`}>
@@ -650,6 +746,95 @@ const WaterMeterDashboard = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Add Device Modal */}
+            {showDeviceModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60 backdrop-blur-sm" onClick={() => setShowDeviceModal(false)}>
+                    <div className={`relative max-w-md w-full rounded-xl shadow-2xl p-6 transition-all transform scale-100 ${
+                        darkMode ? 'bg-gray-800' : 'bg-white'
+                    }`} onClick={e => e.stopPropagation()}>
+
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-3">
+                                <div className={`p-2 rounded-lg ${darkMode ? 'bg-blue-600' : 'bg-blue-100 text-blue-600'}`}>
+                                    <QrCode className="w-6 h-6" />
+                                </div>
+                                <h3 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                    Додати пристрій
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setShowDeviceModal(false)}
+                                className={`p-2 rounded-full transition-colors ${
+                                    darkMode ? 'hover:bg-gray-700 text-gray-400' : 'hover:bg-gray-100 text-gray-500'
+                                }`}
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <p className={`text-sm mb-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            Введіть серійний номер, вказаний на корпусі вашого ESP32 модуля (наприклад, WAT-001).
+                        </p>
+
+                        <form onSubmit={handleConnectDevice}>
+                            <div className="mb-6">
+                                <label className={`block text-xs uppercase font-bold mb-2 tracking-wider ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    Серійний номер (S/N)
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Smartphone className={`h-5 w-5 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={serialCode}
+                                        onChange={(e) => setSerialCode(e.target.value)}
+                                        className={`w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2 font-mono uppercase ${
+                                            darkMode
+                                                ? 'bg-gray-700 border-gray-600 text-white focus:ring-blue-500 placeholder-gray-500'
+                                                : 'bg-white border border-gray-300 text-gray-900 focus:ring-blue-500'
+                                        }`}
+                                        placeholder="XXX-000000"
+                                    />
+                                </div>
+                            </div>
+
+                            {deviceMessage && (
+                                <div className={`mb-4 p-3 rounded-lg text-sm flex items-center ${
+                                    deviceMessage.type === 'error'
+                                        ? (darkMode ? 'bg-red-900/50 text-red-200' : 'bg-red-50 text-red-600')
+                                        : (darkMode ? 'bg-green-900/50 text-green-200' : 'bg-green-50 text-green-600')
+                                }`}>
+                                    {deviceMessage.text}
+                                </div>
+                            )}
+
+                            <div className="flex space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeviceModal(false)}
+                                    className={`flex-1 py-3 rounded-lg font-medium transition duration-200 ${
+                                        darkMode
+                                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                            : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                    }`}
+                                >
+                                    Скасувати
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={`flex-1 py-3 rounded-lg font-semibold text-white transition duration-200 ${
+                                        darkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'
+                                    }`}
+                                >
+                                    Підключити
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
