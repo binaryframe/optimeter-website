@@ -1,70 +1,72 @@
-# Getting Started with Create React App
+💧 Optimeter: Smart Utility Monitoring System
+Optimeter is a comprehensive dashboard for monitoring household resources - water, gas, and electricity. Designed to work with ESP32-CAM devices, it uses computer vision to digitize traditional analog meter readings and track consumption across multiple properties.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+🌟 Key Features
+🏢 Multi-Property Management
+Add Multiple Locations: Manage your home, office, and country house under one account.
 
-## Available Scripts
+Independent Device Setup: Each apartment can have its own set of ESP32-CAM devices for water, gas, or electricity.
 
-In the project directory, you can run:
+📊 Advanced Analytics
+Real-time Consumption: View current readings and monthly usage.
 
-### `npm start`
+Visual Data: Interactive Line and Bar charts (via Recharts) showing trends over time.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Cost Calculation: Automatic bill estimation based on custom tariffs set in the settings.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+📸 ESP32-CAM Integration
+Snapshot Frequency: Configure how often the camera takes a photo (12h, 24h, weekly, etc.).
 
-### `npm test`
+Evidence View: Browse the history of actual photos taken by the camera to verify AI-recognized digits.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+⚙️ User Experience
+Localization: Seamlessly toggle between Ukrainian 🇺🇦 and English.
 
-### `npm run build`
+Dark Mode: Full support for dark and light themes.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Responsive Design: Optimized for mobile, tablet, and desktop viewing.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+🛠 Tech Stack
+Frontend: React.js
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Styling: Tailwind CSS
 
-### `npm run eject`
+Charts: Recharts
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Icons: Lucide React
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+Hardware Compatibility: ESP32 / ESP32-CAM (Firmware not included in this repo)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+🖥 How to use
+Login: Use the demo credentials (if applicable) or create a new account.
 
-## Learn More
+Add properties: Use the building icon in the header to several properties.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Connect Device: Click "+ Add Device" and enter the serial code (e.g., WAT-123 for Water, EL-123 for Electricity).
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Configure Tariffs: Go to the Settings tab to enter the price per unit ($/m³ or $/kW) and set how frequent camera will take photos.
 
-### Code Splitting
+📝 Configuration (Serial Codes)
+For the demo simulation, the system recognizes the following serial prefixes:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+WAT-... for Water Meters
 
-### Analyzing the Bundle Size
+EL-... for Electricity Meters
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+GAS-... for Gas Meters
 
-### Making a Progressive Web App
+🤝 Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Fork the Project
 
-### Advanced Configuration
+Create your Feature Branch (git checkout -b feature/AmazingFeature)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Commit your Changes (git commit -m 'Add some AmazingFeature')
 
-### Deployment
+Push to the Branch (git push origin feature/AmazingFeature)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Open a Pull Request
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Optimeter — Take control of your resources, one click at a time.
